@@ -69,18 +69,46 @@ body::before {
   position: fixed; inset: 0;
   background: var(--grey);
   display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   z-index: 10;
+  overflow-y: auto;
+  padding: 90px 16px 80px;
 }
 
+/* Header: left = instruction, right = "PROVE IT ...." */
 .puzzle-header {
-  position: absolute;
-  top: 28px; left: 28px;
-  display: flex; align-items: baseline; gap: 18px;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 18px 28px 14px;
+  display: flex;
+  align-items: baseline;
   z-index: 30;
+  background: var(--grey);
+
+}
+
+.puzzle-subtitle {
+  width: 50%;
+  text-align: right;
+
+  font-size: clamp(18px, 2.8vw, 32px);
+  font-weight: 700;
+  color: var(--red);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  font-family: var(--mono);
+
+  
 }
 
 .puzzle-title {
-  font-size: clamp(22px, 3.5vw, 38px);
+  width: 50%;
+  text-align: left;
+
+  font-size: clamp(18px, 2.8vw, 32px);
   font-weight: 700;
   color: var(--red);
   letter-spacing: 0.08em;
@@ -89,97 +117,129 @@ body::before {
   font-family: var(--mono);
 }
 
-/* CHANGED: much larger subtitle */
-.puzzle-subtitle {
+/* ── JUMBLED GRID ── */
+#jumbled-grid-wrap {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+}
+
+/* region key strip */
+#region-key {
+  display: flex;
+  gap: 20px;
   font-family: var(--mono);
-  font-size: clamp(16px, 2vw, 24px);
-  color: var(--red);
-  letter-spacing: 0.12em;
-  text-transform: lowercase;
-  opacity: 0.85;
-  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(26,26,26,0.45);
+  align-self: center;
+  padding-left: 4px;
 }
 
-#assembly-target {
-  position: absolute;
-  top: 100px; left: 28px;
-  width: 230px; bottom: 55px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  z-index: 20;
+.key-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-#assembly-target::after {
-  display: none;
+.key-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.photo-inner {
-  position: absolute;
-  inset: 0;
-  background: transparent;
+/* the big jumbled grid */
+#jumbled-grid {
+  display: grid;
+  gap: 3px;
+  background: rgba(0,0,0,0.15);
+  padding: 3px;
+  margin: 0 auto;
+}
+
+.captcha-cell {
+  position: relative;
+  cursor: pointer;
   overflow: hidden;
+  transition: transform 0.1s;
 }
-
-.asm-slot {
-  position: absolute;
-  left: 0; right: 0;
-  overflow: hidden;
+.captcha-cell canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
-.asm-slot.drag-over {
-  outline: 2px solid var(--red);
-  outline-offset: -2px;
-}
-.asm-slot canvas {
-  display: block; width: 100%; height: 100%; object-fit: cover;
-}
-.asm-slot-hint {
+.captcha-cell::after {
+  content: '';
   position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 10px;
-  color: rgba(0,0,0,0.2); letter-spacing: 0.08em;
+  border: 3px solid transparent;
+  transition: border-color 0.12s, background 0.12s;
   pointer-events: none;
+}
+.captcha-cell:hover::after {
+  border-color: rgba(155,0,0,0.5);
+  background: rgba(155,0,0,0.06);
+}
+.captcha-cell.selected::after {
+  border-color: var(--red);
+  background: rgba(155,0,0,0.22);
+}
+.captcha-cell.selected .cell-check {
+  opacity: 1;
+  transform: scale(1);
 }
 
-/* CHANGED: no white border/padding, raw image only */
-.piece {
+.cell-region-dot {
   position: absolute;
-  background: transparent;
-  cursor: grab;
-  padding: 0;
-  border: none;
-  box-shadow: 4px 5px 16px rgba(0,0,0,0.35);
-  transition: box-shadow 0.15s, opacity 0.2s;
-}
-.piece:hover {
-  box-shadow: 6px 8px 24px rgba(0,0,0,0.5);
-  z-index: 22 !important;
-}
-.piece:active { cursor: grabbing; }
-.piece.used {
-  opacity: 0.15;
+  bottom: 4px; left: 4px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  opacity: 0.7;
   pointer-events: none;
-  filter: grayscale(0.5);
+  z-index: 3;
 }
-.piece canvas {
-  display: block; width: 100%; height: 100%;
-  object-fit: cover; pointer-events: none;
+
+.cell-check {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 18px; height: 18px;
+  background: var(--red);
+  color: white;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.12s, transform 0.12s;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#puzzle-footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--grey);
+  z-index: 30;
 }
 
 #hint {
-  position: absolute;
-  bottom: 16px; left: 290px; right: 160px;
   font-family: var(--mono);
   font-size: 11px;
   color: rgba(26,26,26,0.45);
   letter-spacing: 0.08em;
-  text-align: center;
 }
 
 #verify-btn {
-  position: absolute;
-  bottom: 14px; right: 22px;
   background: transparent;
   border: 2px solid var(--red);
   color: var(--red);
@@ -302,16 +362,19 @@ body::before {
 <!-- ── PUZZLE ── -->
 <div id="phase-puzzle">
   <div class="puzzle-header">
-    <div class="puzzle-title">PROVE IT</div>
-    <div class="puzzle-subtitle">assemble your face</div>
+    <div class="puzzle-title">PROVE IT ....</div>
+    <div class="puzzle-subtitle">SELECT ONE CORRECT TILE FOR EACH FACIAL REGION</div>
   </div>
 
-  <div id="assembly-target">
-    <div class="photo-inner" id="photo-inner"></div>
+  <div id="jumbled-grid-wrap">
+    <div id="region-key"></div>
+    <div id="jumbled-grid"></div>
   </div>
 
-  <div id="hint">drag segments onto the frame</div>
-  <button id="verify-btn" onclick="verify()">VERIFY</button>
+  <div id="puzzle-footer">
+    <div id="hint">0 / 3 regions selected</div>
+    <button id="verify-btn" onclick="verify()">VERIFY</button>
+  </div>
 </div>
 
 <!-- ── RESULT ── -->
@@ -333,20 +396,18 @@ body::before {
 const CAP_W = 240, CAP_H = 300;
 
 const REGIONS = [
-  { name: 'forehead',      y: 0.00, h: 0.34 },
-  { name: 'eyes & nose',   y: 0.34, h: 0.33 },
-  { name: 'mouth & chin',  y: 0.67, h: 0.33 },
+  { name: 'forehead',      y: 0.00, h: 0.34, color: '#c0392b' },
+  { name: 'eyes & nose',   y: 0.34, h: 0.33, color: '#2980b9' },
+  { name: 'mouth & chin',  y: 0.67, h: 0.33, color: '#27ae60' },
 ];
 
-let slotContents = {};
-let pieceInSlot  = {};
-let dragTrayIdx  = null;
+let selectedPerRegion = { 0: null, 1: null, 2: null };
 let capturedImageData = null;
 
 function show(id) {
   ['phase-loading','phase-puzzle','phase-result','phase-nocam'].forEach(p => {
     const el = document.getElementById(p);
-    const flex = ['phase-result','phase-nocam'].includes(p);
+    const flex = ['phase-result','phase-nocam','phase-puzzle'].includes(p);
     el.style.display = p === id ? (flex ? 'flex' : 'block') : 'none';
   });
 }
@@ -358,12 +419,7 @@ function runSpiral(onCapture, onDone) {
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d');
   const cx = size / 2, cy = size / 2;
-
-  const rings = [
-    { r: size*0.47 }, { r: size*0.36 },
-    { r: size*0.25 }, { r: size*0.14 },
-  ];
-
+  const rings = [{ r: size*0.47 }, { r: size*0.36 }, { r: size*0.25 }, { r: size*0.14 }];
   const totalDuration = 2800;
   let startTime = null, captured = false;
 
@@ -374,7 +430,6 @@ function runSpiral(onCapture, onDone) {
     ctx.strokeStyle = '#1a1a1a';
     ctx.lineWidth = 1.2;
     ctx.lineCap = 'round';
-
     rings.forEach((ring, i) => {
       const rs = i * 0.18;
       const rp = Math.max(0, Math.min(1, (progress - rs) / (1 - rs)));
@@ -383,9 +438,7 @@ function runSpiral(onCapture, onDone) {
       ctx.arc(cx, cy, ring.r, -Math.PI/2, -Math.PI/2 + rp * Math.PI * 2);
       ctx.stroke();
     });
-
     if (!captured && progress >= 0.55) { captured = true; onCapture(); }
-
     if (progress < 1) requestAnimationFrame(draw);
     else setTimeout(onDone, 400);
   }
@@ -395,8 +448,7 @@ function runSpiral(onCapture, onDone) {
 // ── Camera ──────────────────────────────────────────────────────
 async function init() {
   show('phase-loading');
-  slotContents = {0:null,1:null,2:null};
-  pieceInSlot  = {};
+  selectedPerRegion = { 0: null, 1: null, 2: null };
 
   let stream;
   try {
@@ -428,332 +480,40 @@ function captureFrame(stream) {
   vid.srcObject = null;
 }
 
-// ── DISTORTIONS (much more extreme) ─────────────────────────────
+// ── DISTORTIONS ──────────────────────────────────────────────────
 const DISTORTIONS = [
-  // 0: heavy mirror + strong color channel split
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const si=(y*w+(w-1-x))*4,di=(y*w+x)*4;
-      d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
-    }
-    ctx.putImageData(id,0,0);
-    // heavy RGB channel shift
-    ctx.globalCompositeOperation='screen';
-    ctx.fillStyle='rgba(255,0,0,0.35)'; ctx.fillRect(8,0,w,h);
-    ctx.fillStyle='rgba(0,255,255,0.25)'; ctx.fillRect(-8,0,w,h);
-    ctx.globalCompositeOperation='source-over';
-  },
-
-  // 1: full invert + heavy red tint + contrast boost
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let i=0;i<d.length;i+=4){
-      d[i]=255-d[i]; d[i+1]=255-d[i+1]; d[i+2]=255-d[i+2];
-      // boost contrast
-      const r=(d[i]-128)*2.2+128, g=(d[i+1]-128)*2.2+128, b=(d[i+2]-128)*2.2+128;
-      d[i]=Math.max(0,Math.min(255,r));
-      d[i+1]=Math.max(0,Math.min(255,g));
-      d[i+2]=Math.max(0,Math.min(255,b));
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(160,0,0,0.4)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 2: extreme sine warp horizontal (amplitude 40px)
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const sx=Math.round(x+40*Math.sin(y*0.28+1.2));
-      const csx=Math.max(0,Math.min(w-1,sx));
-      const si=(y*w+csx)*4,di=(y*w+x)*4;
-      d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
-    }
-    ctx.putImageData(id,0,0);
-  },
-
-  // 3: huge pixelation (24px blocks)
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    const b=24;
-    for(let y=0;y<h;y+=b)for(let x=0;x<w;x+=b){
-      const si=(y*w+x)*4,r=d[si],g=d[si+1],bv=d[si+2];
-      for(let by=0;by<b&&y+by<h;by++)for(let bx=0;bx<b&&x+bx<w;bx++){
-        const di=((y+by)*w+(x+bx))*4;
-        d[di]=r; d[di+1]=g; d[di+2]=bv;
-      }
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(0,0,180,0.3)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 4: extreme vertical sine warp (amplitude 30px) + desaturate
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const sy=Math.round(y+30*Math.sin(x*0.35));
-      const csy=Math.max(0,Math.min(h-1,sy));
-      const si=(csy*w+x)*4,di=(y*w+x)*4;
-      d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
-    }
-    // desaturate
-    for(let i=0;i<d.length;i+=4){
-      const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-      d[i]=d[i+1]=d[i+2]=g;
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(0,180,120,0.35)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 5: extreme posterize (2-level) + heavy red overlay + invert half
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let i=0;i<d.length;i+=4){
-      d[i]=d[i]>128?255:0;
-      d[i+1]=d[i+1]>128?255:0;
-      d[i+2]=d[i+2]>128?255:0;
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(150,0,0,0.45)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 6: heavy glitch — random row shifts up to 80px + strong cyan/red split
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
-    for(let y=0;y<h;y++){
-      const sh=Math.random()<0.45?Math.floor((Math.random()-0.5)*80):0;
-      for(let x=0;x<w;x++){
-        const sx=(x+sh+w)%w;
-        const si=(y*w+sx)*4,di=(y*w+x)*4;
-        d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
-      }
-    }
-    ctx.putImageData(id,0,0);
-    ctx.globalCompositeOperation='screen';
-    ctx.fillStyle='rgba(255,0,0,0.4)'; ctx.fillRect(14,0,w,h);
-    ctx.fillStyle='rgba(0,255,255,0.3)'; ctx.fillRect(-14,0,w,h);
-    ctx.globalCompositeOperation='source-over';
-  },
-
-  // 7: flip vertical + high contrast + blue tint
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const si=((h-1-y)*w+x)*4,di=(y*w+x)*4;
-      d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
-    }
-    for(let i=0;i<d.length;i+=4){
-      const r=(d[i]-128)*2.5+128,g=(d[i+1]-128)*2.5+128,b=(d[i+2]-128)*2.5+128;
-      d[i]=Math.max(0,Math.min(255,r));
-      d[i+1]=Math.max(0,Math.min(255,g));
-      d[i+2]=Math.max(0,Math.min(255,b));
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(0,0,200,0.35)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 8: extreme noise (±180 per channel)
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let i=0;i<d.length;i+=4){
-      const n=(Math.random()-0.5)*180;
-      d[i]=Math.max(0,Math.min(255,d[i]+n));
-      d[i+1]=Math.max(0,Math.min(255,d[i+1]+n));
-      d[i+2]=Math.max(0,Math.min(255,d[i+2]+n));
-    }
-    ctx.putImageData(id,0,0);
-  },
-
-  // 9: high-contrast grayscale + heavy green overlay
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let i=0;i<d.length;i+=4){
-      const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-      const c=Math.max(0,Math.min(255,(g-128)*3.0+128));
-      d[i]=d[i+1]=d[i+2]=c;
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(0,200,0,0.4)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 10: diagonal pixel-sort simulation (sort rows by brightness)
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let y=0;y<h;y++){
-      const row=[];
-      for(let x=0;x<w;x++){const i=(y*w+x)*4;row.push([d[i],d[i+1],d[i+2]]);}
-      row.sort((a,b)=>(0.299*a[0]+0.587*a[1]+0.114*a[2])-(0.299*b[0]+0.587*b[1]+0.114*b[2]));
-      for(let x=0;x<w;x++){const i=(y*w+x)*4;d[i]=row[x][0];d[i+1]=row[x][1];d[i+2]=row[x][2];}
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(80,0,120,0.3)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 11: sepia + heavy vignette + horizontal scanlines
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let i=0;i<d.length;i+=4){
-      const r=d[i],g=d[i+1],b=d[i+2];
-      d[i]  =Math.min(255,r*0.393+g*0.769+b*0.189);
-      d[i+1]=Math.min(255,r*0.349+g*0.686+b*0.168);
-      d[i+2]=Math.min(255,r*0.272+g*0.534+b*0.131);
-    }
-    ctx.putImageData(id,0,0);
-    for(let y=0;y<h;y+=3){ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fillRect(0,y,w,1);}
-    // vignette
-    const grad=ctx.createRadialGradient(w/2,h/2,h*0.2,w/2,h/2,h*0.8);
-    grad.addColorStop(0,'rgba(0,0,0,0)');
-    grad.addColorStop(1,'rgba(0,0,0,0.75)');
-    ctx.fillStyle=grad; ctx.fillRect(0,0,w,h);
-  },
-
-  // 12: channel-swap RGB→GBR + contrast
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let i=0;i<d.length;i+=4){
-      const r=d[i],g=d[i+1],b=d[i+2];
-      d[i]=g; d[i+1]=b; d[i+2]=r;
-    }
-    for(let i=0;i<d.length;i+=4){
-      d[i]=Math.max(0,Math.min(255,(d[i]-128)*2+128));
-      d[i+1]=Math.max(0,Math.min(255,(d[i+1]-128)*2+128));
-      d[i+2]=Math.max(0,Math.min(255,(d[i+2]-128)*2+128));
-    }
-    ctx.putImageData(id,0,0);
-  },
-
-  // 13: zoom-blur (radial smear toward center)
-  function(ctx,w,h){
-    const steps=10;
-    ctx.globalAlpha=1/steps;
-    for(let s=1;s<=steps;s++){
-      const sc=1+s*0.04;
-      ctx.save();
-      ctx.translate(w/2,h/2); ctx.scale(sc,sc); ctx.translate(-w/2,-h/2);
-      ctx.drawImage(ctx.canvas,0,0);
-      ctx.restore();
-    }
-    ctx.globalAlpha=1;
-    ctx.fillStyle='rgba(200,100,0,0.25)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 14: diagonal stripe overlay + hue-rotate simulation (swap channels cyclically)
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      if((x+y)%6<3){
-        const i=(y*w+x)*4;
-        const r=d[i],g=d[i+1],b=d[i+2];
-        d[i]=b; d[i+1]=r; d[i+2]=g;
-      }
-    }
-    ctx.putImageData(id,0,0);
-  },
-
-  // 15: heavy mosaic (32px) + invert + yellow wash
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    const b=32;
-    for(let y=0;y<h;y+=b)for(let x=0;x<w;x+=b){
-      const si=(y*w+x)*4;
-      const r=255-d[si],g=255-d[si+1],bv=255-d[si+2];
-      for(let by=0;by<b&&y+by<h;by++)for(let bx=0;bx<b&&x+bx<w;bx++){
-        const di=((y+by)*w+(x+bx))*4;
-        d[di]=r; d[di+1]=g; d[di+2]=bv;
-      }
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(220,200,0,0.35)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 16: vertical pixel sort (sort columns by brightness)
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let x=0;x<w;x++){
-      const col=[];
-      for(let y=0;y<h;y++){const i=(y*w+x)*4;col.push([d[i],d[i+1],d[i+2]]);}
-      col.sort((a,b)=>(0.299*b[0]+0.587*b[1]+0.114*b[2])-(0.299*a[0]+0.587*a[1]+0.114*a[2]));
-      for(let y=0;y<h;y++){const i=(y*w+x)*4;d[i]=col[y][0];d[i+1]=col[y][1];d[i+2]=col[y][2];}
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(0,100,200,0.3)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 17: double sine warp (both axes simultaneously) + magenta
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const sx=Math.round(x+25*Math.sin(y*0.22+0.5));
-      const sy=Math.round(y+20*Math.sin(x*0.28+1.0));
-      const csx=Math.max(0,Math.min(w-1,sx));
-      const csy=Math.max(0,Math.min(h-1,sy));
-      const si=(csy*w+csx)*4,di=(y*w+x)*4;
-      d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(200,0,200,0.3)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 18: dithered grayscale (Bayer-like 4x4 threshold)
-  function(ctx,w,h){
-    const bayer=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
-    const id=ctx.getImageData(0,0,w,h),d=id.data;
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const i=(y*w+x)*4;
-      const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-      const threshold=(bayer[y%4][x%4]/16)*255;
-      const v=g>threshold?255:0;
-      d[i]=d[i+1]=d[i+2]=v;
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(180,60,0,0.4)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 19: mirror left half onto right + strong blue-green
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
-    for(let y=0;y<h;y++)for(let x=w/2;x<w;x++){
-      const si=(y*w+(w-1-x))*4,di=(y*w+x)*4;
-      d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(0,180,180,0.35)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 20: block scramble — swap 16px tiles randomly
-  function(ctx,w,h){
-    const bs=16;
-    const cols=Math.floor(w/bs), rows=Math.floor(h/bs);
-    const tiles=[];
-    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)tiles.push([c,r]);
-    for(let i=tiles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}
-    const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h;
-    const tctx=tmp.getContext('2d'); tctx.drawImage(ctx.canvas,0,0);
-    tiles.forEach(([c,r],i)=>{
-      const [oc,or]=tiles[(i+Math.floor(tiles.length/2))%tiles.length];
-      ctx.drawImage(tmp,oc*bs,or*bs,bs,bs,c*bs,r*bs,bs,bs);
-    });
-    ctx.fillStyle='rgba(255,80,0,0.2)'; ctx.fillRect(0,0,w,h);
-  },
-
-  // 21: edge-detection emboss effect + high contrast
-  function(ctx,w,h){
-    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
-    const kernel=[-1,-1,-1,-1,8,-1,-1,-1,-1];
-    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
-      let r=0,g=0,b=0,k=0;
-      for(let ky=-1;ky<=1;ky++)for(let kx=-1;kx<=1;kx++){
-        const si=((y+ky)*w+(x+kx))*4;
-        r+=o[si]*kernel[k]; g+=o[si+1]*kernel[k]; b+=o[si+2]*kernel[k++];
-      }
-      const di=(y*w+x)*4;
-      d[di]=Math.max(0,Math.min(255,r+128));
-      d[di+1]=Math.max(0,Math.min(255,g+128));
-      d[di+2]=Math.max(0,Math.min(255,b+128));
-    }
-    ctx.putImageData(id,0,0);
-    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,0,w,h);
-  }
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const si=(y*w+(w-1-x))*4,di=(y*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}ctx.putImageData(id,0,0);ctx.globalCompositeOperation='screen';ctx.fillStyle='rgba(255,0,0,0.35)';ctx.fillRect(8,0,w,h);ctx.fillStyle='rgba(0,255,255,0.25)';ctx.fillRect(-8,0,w,h);ctx.globalCompositeOperation='source-over';},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){d[i]=255-d[i];d[i+1]=255-d[i+1];d[i+2]=255-d[i+2];const r=(d[i]-128)*2.2+128,g=(d[i+1]-128)*2.2+128,b=(d[i+2]-128)*2.2+128;d[i]=Math.max(0,Math.min(255,r));d[i+1]=Math.max(0,Math.min(255,g));d[i+2]=Math.max(0,Math.min(255,b));}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(160,0,0,0.4)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const sx=Math.round(x+40*Math.sin(y*0.28+1.2));const csx=Math.max(0,Math.min(w-1,sx));const si=(y*w+csx)*4,di=(y*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}ctx.putImageData(id,0,0);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;const b=24;for(let y=0;y<h;y+=b)for(let x=0;x<w;x+=b){const si=(y*w+x)*4,r=d[si],g=d[si+1],bv=d[si+2];for(let by=0;by<b&&y+by<h;by++)for(let bx=0;bx<b&&x+bx<w;bx++){const di=((y+by)*w+(x+bx))*4;d[di]=r;d[di+1]=g;d[di+2]=bv;}}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,0,180,0.3)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const sy=Math.round(y+30*Math.sin(x*0.35));const csy=Math.max(0,Math.min(h-1,sy));const si=(csy*w+x)*4,di=(y*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];d[i]=d[i+1]=d[i+2]=g;}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,180,120,0.35)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){d[i]=d[i]>128?255:0;d[i+1]=d[i+1]>128?255:0;d[i+2]=d[i+2]>128?255:0;}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(150,0,0,0.45)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++){const sh=Math.random()<0.45?Math.floor((Math.random()-0.5)*80):0;for(let x=0;x<w;x++){const sx=(x+sh+w)%w;const si=(y*w+sx)*4,di=(y*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}}ctx.putImageData(id,0,0);ctx.globalCompositeOperation='screen';ctx.fillStyle='rgba(255,0,0,0.4)';ctx.fillRect(14,0,w,h);ctx.fillStyle='rgba(0,255,255,0.3)';ctx.fillRect(-14,0,w,h);ctx.globalCompositeOperation='source-over';},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const si=((h-1-y)*w+x)*4,di=(y*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}for(let i=0;i<d.length;i+=4){const r=(d[i]-128)*2.5+128,g=(d[i+1]-128)*2.5+128,b=(d[i+2]-128)*2.5+128;d[i]=Math.max(0,Math.min(255,r));d[i+1]=Math.max(0,Math.min(255,g));d[i+2]=Math.max(0,Math.min(255,b));}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,0,200,0.35)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const n=(Math.random()-0.5)*180;d[i]=Math.max(0,Math.min(255,d[i]+n));d[i+1]=Math.max(0,Math.min(255,d[i+1]+n));d[i+2]=Math.max(0,Math.min(255,d[i+2]+n));}ctx.putImageData(id,0,0);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];const c=Math.max(0,Math.min(255,(g-128)*3.0+128));d[i]=d[i+1]=d[i+2]=c;}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,200,0,0.4)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let y=0;y<h;y++){const row=[];for(let x=0;x<w;x++){const i=(y*w+x)*4;row.push([d[i],d[i+1],d[i+2]]);}row.sort((a,b)=>(0.299*a[0]+0.587*a[1]+0.114*a[2])-(0.299*b[0]+0.587*b[1]+0.114*b[2]));for(let x=0;x<w;x++){const i=(y*w+x)*4;d[i]=row[x][0];d[i+1]=row[x][1];d[i+2]=row[x][2];}}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(80,0,120,0.3)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];d[i]=Math.min(255,r*0.393+g*0.769+b*0.189);d[i+1]=Math.min(255,r*0.349+g*0.686+b*0.168);d[i+2]=Math.min(255,r*0.272+g*0.534+b*0.131);}ctx.putImageData(id,0,0);for(let y=0;y<h;y+=3){ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fillRect(0,y,w,1);}const grad=ctx.createRadialGradient(w/2,h/2,h*0.2,w/2,h/2,h*0.8);grad.addColorStop(0,'rgba(0,0,0,0)');grad.addColorStop(1,'rgba(0,0,0,0.75)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];d[i]=g;d[i+1]=b;d[i+2]=r;}for(let i=0;i<d.length;i+=4){d[i]=Math.max(0,Math.min(255,(d[i]-128)*2+128));d[i+1]=Math.max(0,Math.min(255,(d[i+1]-128)*2+128));d[i+2]=Math.max(0,Math.min(255,(d[i+2]-128)*2+128));}ctx.putImageData(id,0,0);},
+  function(ctx,w,h){const steps=10;ctx.globalAlpha=1/steps;for(let s=1;s<=steps;s++){const sc=1+s*0.04;ctx.save();ctx.translate(w/2,h/2);ctx.scale(sc,sc);ctx.translate(-w/2,-h/2);ctx.drawImage(ctx.canvas,0,0);ctx.restore();}ctx.globalAlpha=1;ctx.fillStyle='rgba(200,100,0,0.25)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let y=0;y<h;y++)for(let x=0;x<w;x++){if((x+y)%6<3){const i=(y*w+x)*4;const r=d[i],g=d[i+1],b=d[i+2];d[i]=b;d[i+1]=r;d[i+2]=g;}}ctx.putImageData(id,0,0);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;const b=32;for(let y=0;y<h;y+=b)for(let x=0;x<w;x+=b){const si=(y*w+x)*4;const r=255-d[si],g=255-d[si+1],bv=255-d[si+2];for(let by=0;by<b&&y+by<h;by++)for(let bx=0;bx<b&&x+bx<w;bx++){const di=((y+by)*w+(x+bx))*4;d[di]=r;d[di+1]=g;d[di+2]=bv;}}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(220,200,0,0.35)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let x=0;x<w;x++){const col=[];for(let y=0;y<h;y++){const i=(y*w+x)*4;col.push([d[i],d[i+1],d[i+2]]);}col.sort((a,b)=>(0.299*b[0]+0.587*b[1]+0.114*b[2])-(0.299*a[0]+0.587*a[1]+0.114*a[2]));for(let y=0;y<h;y++){const i=(y*w+x)*4;d[i]=col[y][0];d[i+1]=col[y][1];d[i+2]=col[y][2];}}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,100,200,0.3)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const sx=Math.round(x+25*Math.sin(y*0.22+0.5));const sy=Math.round(y+20*Math.sin(x*0.28+1.0));const csx=Math.max(0,Math.min(w-1,sx));const csy=Math.max(0,Math.min(h-1,sy));const si=(csy*w+csx)*4,di=(y*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(200,0,200,0.3)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const bayer=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];const id=ctx.getImageData(0,0,w,h),d=id.data;for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];const threshold=(bayer[y%4][x%4]/16)*255;const v=g>threshold?255:0;d[i]=d[i+1]=d[i+2]=v;}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(180,60,0,0.4)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++)for(let x=w/2;x<w;x++){const si=(y*w+(w-1-x))*4,di=(y*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,180,180,0.35)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const bs=16;const cols=Math.floor(w/bs),rows=Math.floor(h/bs);const tiles=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)tiles.push([c,r]);for(let i=tiles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;const tctx=tmp.getContext('2d');tctx.drawImage(ctx.canvas,0,0);tiles.forEach(([c,r],i)=>{const[oc,or]=tiles[(i+Math.floor(tiles.length/2))%tiles.length];ctx.drawImage(tmp,oc*bs,or*bs,bs,bs,c*bs,r*bs,bs,bs);});ctx.fillStyle='rgba(255,80,0,0.2)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);const kernel=[-1,-1,-1,-1,8,-1,-1,-1,-1];for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){let r=0,g=0,b=0,k=0;for(let ky=-1;ky<=1;ky++)for(let kx=-1;kx<=1;kx++){const si=((y+ky)*w+(x+kx))*4;r+=o[si]*kernel[k];g+=o[si+1]*kernel[k];b+=o[si+2]*kernel[k++];}const di=(y*w+x)*4;d[di]=Math.max(0,Math.min(255,r+128));d[di+1]=Math.max(0,Math.min(255,g+128));d[di+2]=Math.max(0,Math.min(255,b+128));}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);const cx=w/2,cy=h/2;for(let y=0;y<h;y++)for(let x=0;x<w;x++){const dx=x-cx,dy=y-cy;const dist=Math.sqrt(dx*dx+dy*dy);const angle=Math.atan2(dy,dx)+dist*0.04;const sx=Math.round(cx+Math.cos(angle)*dist);const sy=Math.round(cy+Math.sin(angle)*dist);const csx=Math.max(0,Math.min(w-1,sx));const csy=Math.max(0,Math.min(h-1,sy));const si=(csy*w+csx)*4,di=(y*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(100,0,180,0.25)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);const shift=12;for(let y=0;y<h;y++)for(let x=0;x<w;x++){const di=(y*w+x)*4;const ri=(y*w+Math.max(0,Math.min(w-1,x-shift)))*4;const bi=(y*w+Math.max(0,Math.min(w-1,x+shift)))*4;d[di]=o[ri];d[di+1]=o[(y*w+x)*4+1];d[di+2]=o[bi+2];}ctx.putImageData(id,0,0);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const g=(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2])/255;const r=Math.round(Math.min(255,g*2*255));const bv=Math.round(Math.max(0,(1-g*2)*255));const gv=Math.round(Math.max(0,Math.min(255,(g*2-0.5)*510)));d[i]=r;d[i+1]=gv;d[i+2]=bv;}ctx.putImageData(id,0,0);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);const blur=20;for(let y=0;y<h;y++)for(let x=0;x<w;x++){let r=0,g=0,b=0,n=0;for(let b2=0;b2<blur;b2++){const sx=Math.min(w-1,x+b2);const si=(y*w+sx)*4;r+=o[si];g+=o[si+1];b+=o[si+2];n++;}const di=(y*w+x)*4;d[di]=r/n;d[di+1]=g/n;d[di+2]=b/n;}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++){const band=Math.floor(y/8);const sh=(band%3===0)?Math.floor(Math.sin(band)*30):0;for(let x=0;x<w;x++){const sx=(x+sh+w)%w;const si=(y*w+sx)*4,di=(y*w+x)*4;d[di]=o[si+2];d[di+1]=o[si];d[di+2]=o[si+1];}}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,0,0,0.15)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];if(g>140){d[i]=0;d[i+1]=255;d[i+2]=220;}else{d[i]=Math.round(d[i]*0.3);d[i+1]=Math.round(d[i+1]*0.3);d[i+2]=Math.round(d[i+2]*0.3);}}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(0,80,0,0.2)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const bs=20;const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;const tctx=tmp.getContext('2d');tctx.drawImage(ctx.canvas,0,0);let angle=0;for(let y=0;y<h;y+=bs)for(let x=0;x<w;x+=bs){ctx.save();ctx.translate(x+bs/2,y+bs/2);ctx.rotate(angle);ctx.drawImage(tmp,x,y,bs,bs,-bs/2,-bs/2,bs,bs);ctx.restore();angle+=0.15;}ctx.fillStyle='rgba(180,0,100,0.2)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const avg=(d[i]+d[i+1]+d[i+2])/3;d[i]=Math.min(255,Math.max(0,d[i]*2.5-(avg*1.5)));d[i+1]=Math.min(255,Math.max(0,d[i+1]*2.5-(avg*1.5)));d[i+2]=Math.min(255,Math.max(0,d[i+2]*2.5-(avg*1.5)));}ctx.putImageData(id,0,0);ctx.fillStyle='rgba(255,140,0,0.35)';ctx.fillRect(0,0,w,h);},
+  function(ctx,w,h){const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);for(let y=0;y<h;y++){if(Math.random()<0.3){const src=Math.floor(Math.random()*h);for(let x=0;x<w;x++){const di=(y*w+x)*4,si=(src*w+x)*4;d[di]=o[si];d[di+1]=o[si+1];d[di+2]=o[si+2];}}}ctx.putImageData(id,0,0);ctx.globalCompositeOperation='multiply';ctx.fillStyle='rgba(255,80,80,0.4)';ctx.fillRect(0,0,w,h);ctx.globalCompositeOperation='source-over';},
+  function(ctx,w,h){const palette=[[180,80,60],[60,120,200],[200,180,50],[80,180,100],[200,80,180],[100,100,100]];const id=ctx.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){let best=0,bestD=Infinity;palette.forEach(([r,g,b],pi)=>{const dist=(d[i]-r)**2+(d[i+1]-g)**2+(d[i+2]-b)**2;if(dist<bestD){bestD=dist;best=pi;}});d[i]=palette[best][0];d[i+1]=palette[best][1];d[i+2]=palette[best][2];}ctx.putImageData(id,0,0);}
 ];
 
 function drawSlice(ctx, sliceY, sliceH, distortionIdx) {
@@ -761,202 +521,140 @@ function drawSlice(ctx, sliceY, sliceH, distortionIdx) {
   if (distortionIdx >= 0) DISTORTIONS[distortionIdx % DISTORTIONS.length](ctx, CAP_W, sliceH);
 }
 
-// ── Build puzzle ─────────────────────────────────────────────────
+// ── Build jumbled puzzle ─────────────────────────────────────────
 function buildPuzzle() {
-  const puzzle = document.getElementById('phase-puzzle');
-  slotContents = {0:null,1:null,2:null};
-  pieceInSlot  = {};
-  puzzle.querySelectorAll('.piece').forEach(p => p.remove());
+  selectedPerRegion = { 0: null, 1: null, 2: null };
 
-  const photoInner = document.getElementById('photo-inner');
-  photoInner.querySelectorAll('.asm-slot').forEach(s => s.remove());
-
-  REGIONS.forEach((r, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'asm-slot';
-    slot.dataset.slot = i;
-    slot.style.top    = (r.y * 100) + '%';
-    slot.style.height = (r.h * 100) + '%';
-    const hint = document.createElement('div');
-    hint.className = 'asm-slot-hint';
-    hint.textContent = r.name;
-    slot.appendChild(hint);
-    slot.addEventListener('dragover',  onZoneDragOver);
-    slot.addEventListener('dragleave', onZoneDragLeave);
-    slot.addEventListener('drop',      onZoneDrop);
-    photoInner.appendChild(slot);
+  const keyEl = document.getElementById('region-key');
+  keyEl.innerHTML = '';
+  REGIONS.forEach(region => {
+    const item = document.createElement('div');
+    item.className = 'key-item';
+    const dot = document.createElement('div');
+    dot.className = 'key-dot';
+    dot.style.background = region.color;
+    const label = document.createElement('span');
+    label.textContent = region.name;
+    item.appendChild(dot);
+    item.appendChild(label);
+    keyEl.appendChild(item);
   });
 
-  // 21 pieces: 3 true + 6 distorted decoys per region
-  const descs = [];
-  REGIONS.forEach((r, regionIdx) => {
-    descs.push({ regionIdx, isTrue: true, distortionIdx: -1 });
-    const pool = [...Array(DISTORTIONS.length).keys()];
-    for (let d = 0; d < 6; d++) {
-      const idx = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-      descs.push({ regionIdx, isTrue: false, distortionIdx: idx });
-    }
-  });
-  for (let i = descs.length-1; i>0; i--) {
-    const j = Math.floor(Math.random()*(i+1));
-    [descs[i],descs[j]] = [descs[j],descs[i]];
-  }
+  const DECOYS_PER_REGION = 7;
+  const allTiles = [];
 
-  const vw = window.innerWidth, vh = window.innerHeight;
-  const leftEdge = 290, rightEdge = vw - 14;
-  const topEdge = 80, botEdge = vh - 44;
-
-  // more pieces — slightly smaller so they all fit
-  const pieceW = Math.round(Math.min((rightEdge - leftEdge) / 5.5, 145));
-
-  // CHANGED: fully random scatter — no grid, just random positions
-  // with generous spread across the whole tray area
-  const usedPositions = [];
-
-  descs.forEach((desc, trayIdx) => {
-    const region = REGIONS[desc.regionIdx];
+  REGIONS.forEach((region, regionIdx) => {
     const sliceY = Math.round(CAP_H * region.y);
     const sliceH = Math.round(CAP_H * region.h);
-    const aspect = sliceH / CAP_W;
-    const pH = Math.round(pieceW * aspect);
-
-    const piece = document.createElement('div');
-    piece.className = 'piece';
-    piece.dataset.trayIdx   = trayIdx;
-    piece.dataset.regionIdx = desc.regionIdx;
-    piece.dataset.isTrue    = desc.isTrue ? '1' : '0';
-    piece.draggable = true;
-
-    // CHANGED: scatter widely, allow overlapping, big rotation variance ±45°
-    const maxTries = 30;
-    let px, py;
-    for(let t=0; t<maxTries; t++){
-      px = Math.round(leftEdge + Math.random() * (rightEdge - leftEdge - pieceW));
-      py = Math.round(topEdge  + Math.random() * (botEdge - topEdge - pH));
-      // only do mild overlap avoidance — allow some overlap for chaotic feel
-      const overlap = usedPositions.some(p =>
-        Math.abs(p.x - px) < pieceW * 0.5 && Math.abs(p.y - py) < pH * 0.5
-      );
-      if(!overlap || t > 20) break;
+    allTiles.push({ regionIdx, sliceY, sliceH, isTrue: true, distortionIdx: -1 });
+    const pool = [...Array(DISTORTIONS.length).keys()];
+    for (let d = 0; d < DECOYS_PER_REGION; d++) {
+      const idx = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+      allTiles.push({ regionIdx, sliceY, sliceH, isTrue: false, distortionIdx: idx });
     }
-    usedPositions.push({x: px, y: py});
+  });
 
-    const rot = (Math.random()-0.5) * 72; // ±36° rotation
+  for (let i = allTiles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allTiles[i], allTiles[j]] = [allTiles[j], allTiles[i]];
+  }
 
-    piece.style.left      = px + 'px';
-    piece.style.top       = py + 'px';
-    piece.style.width     = pieceW + 'px';
-    piece.style.height    = pH + 'px';
-    piece.style.transform = `rotate(${rot}deg)`;
-    piece.style.zIndex    = Math.floor(Math.random()*12) + 1;
+  const COLS = 6;
+  const ROWS = Math.ceil(allTiles.length / COLS);
+  const vw = window.innerWidth;
+const vh = window.innerHeight;
+
+const gap = 3;
+const pad = 3;
+
+/* available space (accounting for header + footer) */
+const availW = Math.min(vw - 32, 960);
+const availH = vh - 170; // header + footer buffer
+
+/* size based on width */
+const tileW_fromWidth =
+  (availW - pad * 2 - gap * (COLS - 1)) / COLS;
+
+const tileH_fromWidth = tileW_fromWidth * 0.8;
+
+/* total height if we used width-based sizing */
+const totalHeight_fromWidth =
+  tileH_fromWidth * ROWS + gap * (ROWS - 1) + pad * 2;
+
+/* if too tall → scale everything down */
+let scale = 1;
+if (totalHeight_fromWidth > availH) {
+  scale = availH / totalHeight_fromWidth;
+}
+
+/* final tile size */
+const tileW = Math.floor(tileW_fromWidth * scale);
+const tileH = Math.floor(tileH_fromWidth * scale);
+
+  const grid = document.getElementById('jumbled-grid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${COLS}, ${tileW}px)`;
+  grid.style.gridTemplateRows = `repeat(${ROWS}, ${tileH}px)`;
+
+  allTiles.forEach(desc => {
+    const cell = document.createElement('div');
+    cell.className = 'captcha-cell';
+    cell.dataset.regionIdx = desc.regionIdx;
+    cell.dataset.isTrue = desc.isTrue ? '1' : '0';
+    cell.style.width = tileW + 'px';
+    cell.style.height = tileH + 'px';
+
+    const dot = document.createElement('div');
+    dot.className = 'cell-region-dot';
+    dot.style.background = REGIONS[desc.regionIdx].color;
+    cell.appendChild(dot);
+
+    const check = document.createElement('div');
+    check.className = 'cell-check';
+    check.textContent = '✓';
+    cell.appendChild(check);
 
     const c = document.createElement('canvas');
-    c.width = CAP_W; c.height = sliceH;
-    c.style.width  = pieceW + 'px';
-    c.style.height = pH + 'px';
+    c.width = CAP_W;
+    c.height = desc.sliceH;
+    c.style.width = tileW + 'px';
+    c.style.height = tileH + 'px';
     const ctx = c.getContext('2d');
     if (capturedImageData) {
-      drawSlice(ctx, sliceY, sliceH, desc.distortionIdx);
+      drawSlice(ctx, desc.sliceY, desc.sliceH, desc.distortionIdx);
     } else {
-      ctx.fillStyle = desc.isTrue ? '#aaaaaa' : '#888888';
-      ctx.fillRect(0,0,CAP_W,sliceH);
+      ctx.fillStyle = desc.isTrue ? '#aaa' : '#888';
+      ctx.fillRect(0, 0, CAP_W, desc.sliceH);
     }
-    piece.appendChild(c);
+    cell.appendChild(c);
 
-    piece.addEventListener('dragstart', onPieceDragStart);
-    piece.addEventListener('dragend',   onPieceDragEnd);
-    piece.addEventListener('mousedown', () => { piece.style.zIndex = 25; });
-
-    puzzle.appendChild(piece);
-    pieceInSlot[trayIdx] = null;
+    cell.addEventListener('click', () => onCellClick(cell, desc.regionIdx, desc.isTrue));
+    grid.appendChild(cell);
   });
 
   updateHint();
 }
 
-// ── Drag handlers ────────────────────────────────────────────────
-function onPieceDragStart(e) {
-  dragTrayIdx = parseInt(e.currentTarget.dataset.trayIdx);
-  e.currentTarget.style.opacity = '0.4';
-  e.dataTransfer.effectAllowed = 'move';
-}
-function onPieceDragEnd(e) {
-  if (!e.currentTarget.classList.contains('used'))
-    e.currentTarget.style.opacity = '';
-  dragTrayIdx = null;
-}
-function onZoneDragOver(e) {
-  e.preventDefault();
-  e.currentTarget.classList.add('drag-over');
-}
-function onZoneDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
-function onZoneDrop(e) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  if (dragTrayIdx === null) return;
-  dropPiece(dragTrayIdx, parseInt(e.currentTarget.dataset.slot));
-}
-
-function dropPiece(trayIdx, slotIdx) {
-  if (slotContents[slotIdx] !== null) {
-    const old = slotContents[slotIdx];
-    const op = document.querySelector(`.piece[data-tray-idx="${old}"]`);
-    if (op) { op.classList.remove('used'); op.style.opacity = ''; }
-    pieceInSlot[old] = null;
-  }
-  if (pieceInSlot[trayIdx] !== null) clearSlot(pieceInSlot[trayIdx]);
-  placeInSlot(trayIdx, slotIdx);
+function onCellClick(cell, regionIdx, isTrue) {
+  document.querySelectorAll(`.captcha-cell[data-region-idx="${regionIdx}"].selected`)
+    .forEach(c => c.classList.remove('selected'));
+  cell.classList.add('selected');
+  selectedPerRegion[regionIdx] = isTrue;
   updateHint();
-}
-
-function placeInSlot(trayIdx, slotIdx) {
-  const slot  = document.querySelector(`.asm-slot[data-slot="${slotIdx}"]`);
-  const piece = document.querySelector(`.piece[data-tray-idx="${trayIdx}"]`);
-  slot.querySelectorAll('canvas').forEach(c => c.remove());
-  const hint = slot.querySelector('.asm-slot-hint');
-  if (hint) hint.style.display = 'none';
-
-  const src = piece.querySelector('canvas');
-  const c = document.createElement('canvas');
-  c.width = src.width; c.height = src.height;
-  c.style.width = '100%'; c.style.height = '100%';
-  c.getContext('2d').drawImage(src, 0, 0);
-  slot.appendChild(c);
-
-  slotContents[slotIdx] = trayIdx;
-  pieceInSlot[trayIdx]  = slotIdx;
-  piece.classList.add('used');
-  piece.style.opacity = '';
-}
-
-function clearSlot(slotIdx) {
-  const slot = document.querySelector(`.asm-slot[data-slot="${slotIdx}"]`);
-  slot.querySelectorAll('canvas').forEach(c => c.remove());
-  const hint = slot.querySelector('.asm-slot-hint');
-  if (hint) hint.style.display = '';
-  const old = slotContents[slotIdx];
-  if (old !== null) {
-    const p = document.querySelector(`.piece[data-tray-idx="${old}"]`);
-    if (p) { p.classList.remove('used'); p.style.opacity = ''; }
-    pieceInSlot[old] = null;
-  }
-  slotContents[slotIdx] = null;
 }
 
 function updateHint() {
-  const n = Object.values(slotContents).filter(v => v !== null).length;
+  const n = Object.values(selectedPerRegion).filter(v => v !== null).length;
   document.getElementById('hint').textContent =
-    n === 3 ? 'all segments placed — press VERIFY' : `${n} / 3 segments placed`;
+    n === 3 ? 'all regions selected — press VERIFY' : `${n} / 3 regions selected`;
 }
 
 // ── Verify ───────────────────────────────────────────────────────
 function verify() {
-  const filled = Object.values(slotContents).filter(v => v !== null).length;
+  const filled = Object.values(selectedPerRegion).filter(v => v !== null).length;
   if (filled < 3) {
     const btn = document.getElementById('verify-btn');
-    btn.textContent = 'PLACE ALL 3 FIRST';
+    btn.textContent = 'SELECT ALL 3 FIRST';
     btn.style.borderColor = 'var(--ink)';
     btn.style.color = 'var(--ink)';
     setTimeout(() => {
@@ -967,21 +665,14 @@ function verify() {
     return;
   }
 
-  let correct = 0;
-  for (let s=0; s<3; s++) {
-    const t = slotContents[s];
-    if (t === null) continue;
-    const p = document.querySelector(`.piece[data-tray-idx="${t}"]`);
-    if (parseInt(p.dataset.regionIdx) === s && p.dataset.isTrue === '1') correct++;
-  }
-
+  const correct = Object.values(selectedPerRegion).filter(v => v === true).length;
   const word = document.getElementById('result-word');
   const sub  = document.getElementById('result-sub');
 
   if (correct === 3) {
     word.className = 'ok';
     word.textContent = 'VERIFIED';
-    sub.textContent = 'identity confirmed.\nall three regions correctly placed.\naccess granted.';
+    sub.textContent = 'identity confirmed.\nall three regions correctly identified.\naccess granted.';
   } else if (correct >= 2) {
     word.className = 'bad';
     word.textContent = 'FAILED';
@@ -996,7 +687,7 @@ function verify() {
   drawResultSpiral(correct === 3);
 }
 
-// ── Result spiral (mirrors loading spiral) ───────────────────────
+// ── Result spiral ────────────────────────────────────────────────
 function drawResultSpiral(success) {
   const canvas = document.getElementById('result-canvas');
   const size = Math.min(window.innerWidth, window.innerHeight) * 0.22;
@@ -1007,17 +698,14 @@ function drawResultSpiral(success) {
   canvas.style.transform = 'translate(-50%, -50%)';
   const ctx = canvas.getContext('2d');
   const cx = size / 2, cy = size / 2;
-  const color = success ? getComputedStyle(document.documentElement).getPropertyValue('--red').trim() : '#1a1a1a';
+  const color = success
+    ? getComputedStyle(document.documentElement).getPropertyValue('--red').trim()
+    : '#1a1a1a';
 
-  const rings = [
-    { r: size*0.47 }, { r: size*0.36 },
-    { r: size*0.25 }, { r: size*0.14 },
-  ];
-
+  const rings = [{ r: size*0.47 }, { r: size*0.36 }, { r: size*0.25 }, { r: size*0.14 }];
   const totalDuration = 1600;
   let startTime = null;
 
-  // scattered decorative letters around the screen
   const phase = document.getElementById('phase-result');
   phase.querySelectorAll('.result-qmark').forEach(e => e.remove());
   const letters = success ? ['✓','✓','✓','✓'] : ['✗','✗','✗','✗'];
@@ -1042,7 +730,6 @@ function drawResultSpiral(success) {
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.2;
     ctx.lineCap = 'round';
-
     rings.forEach((ring, i) => {
       const rs = i * 0.18;
       const rp = Math.max(0, Math.min(1, (progress - rs) / (1 - rs)));
@@ -1051,7 +738,6 @@ function drawResultSpiral(success) {
       ctx.arc(cx, cy, ring.r, -Math.PI/2, -Math.PI/2 + rp * Math.PI * 2);
       ctx.stroke();
     });
-
     if (progress < 1) requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
