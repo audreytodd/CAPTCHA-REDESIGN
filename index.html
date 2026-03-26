@@ -564,7 +564,7 @@ const DISTORTIONS = [
     ctx.putImageData(id,0,0);
   },
 
-  // 9: high-contrast grayscale + heavy green overlay + posterize
+  // 9: high-contrast grayscale + heavy green overlay
   function(ctx,w,h){
     const id=ctx.getImageData(0,0,w,h),d=id.data;
     for(let i=0;i<d.length;i+=4){
@@ -574,6 +574,185 @@ const DISTORTIONS = [
     }
     ctx.putImageData(id,0,0);
     ctx.fillStyle='rgba(0,200,0,0.4)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 10: diagonal pixel-sort simulation (sort rows by brightness)
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data;
+    for(let y=0;y<h;y++){
+      const row=[];
+      for(let x=0;x<w;x++){const i=(y*w+x)*4;row.push([d[i],d[i+1],d[i+2]]);}
+      row.sort((a,b)=>(0.299*a[0]+0.587*a[1]+0.114*a[2])-(0.299*b[0]+0.587*b[1]+0.114*b[2]));
+      for(let x=0;x<w;x++){const i=(y*w+x)*4;d[i]=row[x][0];d[i+1]=row[x][1];d[i+2]=row[x][2];}
+    }
+    ctx.putImageData(id,0,0);
+    ctx.fillStyle='rgba(80,0,120,0.3)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 11: sepia + heavy vignette + horizontal scanlines
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data;
+    for(let i=0;i<d.length;i+=4){
+      const r=d[i],g=d[i+1],b=d[i+2];
+      d[i]  =Math.min(255,r*0.393+g*0.769+b*0.189);
+      d[i+1]=Math.min(255,r*0.349+g*0.686+b*0.168);
+      d[i+2]=Math.min(255,r*0.272+g*0.534+b*0.131);
+    }
+    ctx.putImageData(id,0,0);
+    for(let y=0;y<h;y+=3){ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fillRect(0,y,w,1);}
+    // vignette
+    const grad=ctx.createRadialGradient(w/2,h/2,h*0.2,w/2,h/2,h*0.8);
+    grad.addColorStop(0,'rgba(0,0,0,0)');
+    grad.addColorStop(1,'rgba(0,0,0,0.75)');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,w,h);
+  },
+
+  // 12: channel-swap RGB→GBR + contrast
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data;
+    for(let i=0;i<d.length;i+=4){
+      const r=d[i],g=d[i+1],b=d[i+2];
+      d[i]=g; d[i+1]=b; d[i+2]=r;
+    }
+    for(let i=0;i<d.length;i+=4){
+      d[i]=Math.max(0,Math.min(255,(d[i]-128)*2+128));
+      d[i+1]=Math.max(0,Math.min(255,(d[i+1]-128)*2+128));
+      d[i+2]=Math.max(0,Math.min(255,(d[i+2]-128)*2+128));
+    }
+    ctx.putImageData(id,0,0);
+  },
+
+  // 13: zoom-blur (radial smear toward center)
+  function(ctx,w,h){
+    const steps=10;
+    ctx.globalAlpha=1/steps;
+    for(let s=1;s<=steps;s++){
+      const sc=1+s*0.04;
+      ctx.save();
+      ctx.translate(w/2,h/2); ctx.scale(sc,sc); ctx.translate(-w/2,-h/2);
+      ctx.drawImage(ctx.canvas,0,0);
+      ctx.restore();
+    }
+    ctx.globalAlpha=1;
+    ctx.fillStyle='rgba(200,100,0,0.25)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 14: diagonal stripe overlay + hue-rotate simulation (swap channels cyclically)
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data;
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      if((x+y)%6<3){
+        const i=(y*w+x)*4;
+        const r=d[i],g=d[i+1],b=d[i+2];
+        d[i]=b; d[i+1]=r; d[i+2]=g;
+      }
+    }
+    ctx.putImageData(id,0,0);
+  },
+
+  // 15: heavy mosaic (32px) + invert + yellow wash
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data;
+    const b=32;
+    for(let y=0;y<h;y+=b)for(let x=0;x<w;x+=b){
+      const si=(y*w+x)*4;
+      const r=255-d[si],g=255-d[si+1],bv=255-d[si+2];
+      for(let by=0;by<b&&y+by<h;by++)for(let bx=0;bx<b&&x+bx<w;bx++){
+        const di=((y+by)*w+(x+bx))*4;
+        d[di]=r; d[di+1]=g; d[di+2]=bv;
+      }
+    }
+    ctx.putImageData(id,0,0);
+    ctx.fillStyle='rgba(220,200,0,0.35)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 16: vertical pixel sort (sort columns by brightness)
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data;
+    for(let x=0;x<w;x++){
+      const col=[];
+      for(let y=0;y<h;y++){const i=(y*w+x)*4;col.push([d[i],d[i+1],d[i+2]]);}
+      col.sort((a,b)=>(0.299*b[0]+0.587*b[1]+0.114*b[2])-(0.299*a[0]+0.587*a[1]+0.114*a[2]));
+      for(let y=0;y<h;y++){const i=(y*w+x)*4;d[i]=col[y][0];d[i+1]=col[y][1];d[i+2]=col[y][2];}
+    }
+    ctx.putImageData(id,0,0);
+    ctx.fillStyle='rgba(0,100,200,0.3)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 17: double sine warp (both axes simultaneously) + magenta
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      const sx=Math.round(x+25*Math.sin(y*0.22+0.5));
+      const sy=Math.round(y+20*Math.sin(x*0.28+1.0));
+      const csx=Math.max(0,Math.min(w-1,sx));
+      const csy=Math.max(0,Math.min(h-1,sy));
+      const si=(csy*w+csx)*4,di=(y*w+x)*4;
+      d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
+    }
+    ctx.putImageData(id,0,0);
+    ctx.fillStyle='rgba(200,0,200,0.3)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 18: dithered grayscale (Bayer-like 4x4 threshold)
+  function(ctx,w,h){
+    const bayer=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+    const id=ctx.getImageData(0,0,w,h),d=id.data;
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      const i=(y*w+x)*4;
+      const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      const threshold=(bayer[y%4][x%4]/16)*255;
+      const v=g>threshold?255:0;
+      d[i]=d[i+1]=d[i+2]=v;
+    }
+    ctx.putImageData(id,0,0);
+    ctx.fillStyle='rgba(180,60,0,0.4)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 19: mirror left half onto right + strong blue-green
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
+    for(let y=0;y<h;y++)for(let x=w/2;x<w;x++){
+      const si=(y*w+(w-1-x))*4,di=(y*w+x)*4;
+      d[di]=o[si]; d[di+1]=o[si+1]; d[di+2]=o[si+2];
+    }
+    ctx.putImageData(id,0,0);
+    ctx.fillStyle='rgba(0,180,180,0.35)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 20: block scramble — swap 16px tiles randomly
+  function(ctx,w,h){
+    const bs=16;
+    const cols=Math.floor(w/bs), rows=Math.floor(h/bs);
+    const tiles=[];
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)tiles.push([c,r]);
+    for(let i=tiles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}
+    const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h;
+    const tctx=tmp.getContext('2d'); tctx.drawImage(ctx.canvas,0,0);
+    tiles.forEach(([c,r],i)=>{
+      const [oc,or]=tiles[(i+Math.floor(tiles.length/2))%tiles.length];
+      ctx.drawImage(tmp,oc*bs,or*bs,bs,bs,c*bs,r*bs,bs,bs);
+    });
+    ctx.fillStyle='rgba(255,80,0,0.2)'; ctx.fillRect(0,0,w,h);
+  },
+
+  // 21: edge-detection emboss effect + high contrast
+  function(ctx,w,h){
+    const id=ctx.getImageData(0,0,w,h),d=id.data,o=new Uint8ClampedArray(d);
+    const kernel=[-1,-1,-1,-1,8,-1,-1,-1,-1];
+    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+      let r=0,g=0,b=0,k=0;
+      for(let ky=-1;ky<=1;ky++)for(let kx=-1;kx<=1;kx++){
+        const si=((y+ky)*w+(x+kx))*4;
+        r+=o[si]*kernel[k]; g+=o[si+1]*kernel[k]; b+=o[si+2]*kernel[k++];
+      }
+      const di=(y*w+x)*4;
+      d[di]=Math.max(0,Math.min(255,r+128));
+      d[di+1]=Math.max(0,Math.min(255,g+128));
+      d[di+2]=Math.max(0,Math.min(255,b+128));
+    }
+    ctx.putImageData(id,0,0);
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,0,w,h);
   }
 ];
 
@@ -608,12 +787,12 @@ function buildPuzzle() {
     photoInner.appendChild(slot);
   });
 
-  // 15 pieces: 5 true + 2 distorted decoys per region
+  // 21 pieces: 3 true + 6 distorted decoys per region
   const descs = [];
   REGIONS.forEach((r, regionIdx) => {
     descs.push({ regionIdx, isTrue: true, distortionIdx: -1 });
     const pool = [...Array(DISTORTIONS.length).keys()];
-    for (let d = 0; d < 2; d++) {
+    for (let d = 0; d < 6; d++) {
       const idx = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
       descs.push({ regionIdx, isTrue: false, distortionIdx: idx });
     }
@@ -627,8 +806,8 @@ function buildPuzzle() {
   const leftEdge = 290, rightEdge = vw - 14;
   const topEdge = 80, botEdge = vh - 44;
 
-  // CHANGED: much larger pieces — up to 180px wide
-  const pieceW = Math.round(Math.min((rightEdge - leftEdge) / 3.8, 180));
+  // more pieces — slightly smaller so they all fit
+  const pieceW = Math.round(Math.min((rightEdge - leftEdge) / 5.5, 145));
 
   // CHANGED: fully random scatter — no grid, just random positions
   // with generous spread across the whole tray area
